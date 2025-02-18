@@ -1,0 +1,39 @@
+services:
+  mongo-notification-service:
+    image: mongo:latest
+    container_name: mongo-notification-service
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: notificationdb
+    ports:
+      - "27016:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - notification-network
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: notification-service
+    restart: always
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://admin:password@mongo-notification-service:27017/notificationdb?authSource=admin 
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    ports:
+      - "8084:8084"
+    depends_on:
+      - mongo-notification-service
+    networks:
+      - notification-network
+
+networks:
+  notification-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+    driver: local
